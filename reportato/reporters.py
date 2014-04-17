@@ -8,6 +8,16 @@ from django.utils.datastructures import SortedDict
 class ModelReporterOptions(object):
 
     def __init__(self, options=None):
+        """
+        Options class to mimic Django's Meta class on forms. So we'll be able
+        to define something like
+
+        class MyReporter(ModelReporter):
+            class Meta:
+                model = MyModel
+                fields = ('some', 'stuff')
+                custom_headers = {'some': 'Different header'}
+        """
         self.model = getattr(options, 'model', None)
         self.fields = getattr(options, 'fields', None)
         self.custom_headers = getattr(options, 'custom_headers', None)
@@ -69,21 +79,37 @@ class ModelReporter(object):
     __metaclass__ = ModelReporterMetaclass
 
     def __init__(self, items=None):
+        """
+        `items` is expected to be an iterable with Django model instances,
+        this covers both a Queryset or a list of items
+        """
         if not items:
             items = self._meta.model.objects.all()
         self.items = items
 
     def rendered_headers(self):
+        """
+        Returns a sorted list with the field's headers
+        """
         return self.headers.values()
 
     def rendered_rows(self):
+        """
+        Returns an iterable with the different rows of the given queryset / list
+        """
         for item in self.items:
             yield self.rendered_fields(item).values()
 
     def rendered_fields(self, instance):
+        """
+        Returns list with a single row
+        """
         return SortedDict([(name, self._render_field(instance, name)) for name in self.fields])
 
     def _default_field_renderer(self, instance, name):
+        """
+        Handler for default fields
+        """
         value = getattr(instance, name)
 
         if not value:
@@ -94,6 +120,9 @@ class ModelReporter(object):
         return unicode(value)
 
     def _render_field(self, instance, name):
+        """
+        Field handler
+        """
         if hasattr(self, 'render_%s' % name):
             return getattr(self, 'render_%s' % name)(instance)
         else:
