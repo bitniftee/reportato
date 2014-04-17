@@ -1,4 +1,5 @@
 from django.core.exceptions import FieldError
+from django.utils.datastructures import SortedDict
 
 # This pattern with options and metaclasses is very similar to Django's
 # ModelForms. The idea is to keep a very similar API
@@ -41,10 +42,10 @@ class ModelReporterMetaclass(type):
                     raise FieldError(message)
                 new_class.fields = opts.fields
 
-            new_class.headers = {
-                field_name: opts.model._meta.get_field_by_name(field_name)[0].verbose_name.capitalize()
+            new_class.headers = SortedDict([
+                (field_name, opts.model._meta.get_field_by_name(field_name)[0].verbose_name.capitalize())
                 for field_name in new_class.fields
-            }
+            ])
             if opts.custom_headers is not None:
                 missing_headers = set(opts.custom_headers.keys()) - set(all_model_fields)
                 if missing_headers:
@@ -60,21 +61,23 @@ class ModelReporterMetaclass(type):
 class ModelReporter(object):
     __metaclass__ = ModelReporterMetaclass
 
-    def __init__(self, instance):
-        if not isinstance(instance, self._meta.model):
-            raise ValueError('The given object is not an instance of %s' %
-                self._meta.model.__name__)
-
-        self.instance = instance
+    def __init__(self, items=None):
+        if not items:
+            items = self._meta.model.objects.all()
+        self.items = items
 
     def rendered_headers(self):
-        return [self.headers[field] for field in self.fields]
+        return self.headers.values()
 
-    def rendered_fields(self):
-        return {name: self._render_field(name) for name in self.fields}
+    def rendered_rows(self):
+        for item in self.items:
+            yield self.rendered_fields(item).values()
 
-    def _render_field(self, name):
+    def rendered_fields(self, instance):
+        return SortedDict([(name, self._render_field(instance, name)) for name in self.fields])
+
+    def _render_field(self, instance, name):
         if hasattr(self, 'render_%s' % name):
-            return getattr(self, 'render_%s' % name)()
+            return getattr(self, 'render_%s' % name)(instance)
         else:
-            return unicode(getattr(self.instance, name))
+            return unicode(getattr(instance, name))
