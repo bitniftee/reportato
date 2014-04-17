@@ -1,4 +1,5 @@
 from django.core.exceptions import FieldError
+from django.db.models import Manager
 from django.utils.datastructures import SortedDict
 
 # This pattern with options and metaclasses is very similar to Django's
@@ -82,8 +83,18 @@ class ModelReporter(object):
     def rendered_fields(self, instance):
         return SortedDict([(name, self._render_field(instance, name)) for name in self.fields])
 
+    def _default_field_renderer(self, instance, name):
+        value = getattr(instance, name)
+
+        if not value:
+            return u''
+        if isinstance(value, Manager):
+            return u','.join(map(unicode, value.all()))
+
+        return unicode(value)
+
     def _render_field(self, instance, name):
         if hasattr(self, 'render_%s' % name):
             return getattr(self, 'render_%s' % name)(instance)
         else:
-            return unicode(getattr(instance, name))
+            return self._default_field_renderer(instance, name)
