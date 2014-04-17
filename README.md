@@ -22,29 +22,31 @@ will look like:
 
         class Meta:
             model = Journalist
-            fields = ('first_name', 'last_name', 'something_else')
+            fields = ('first_name', 'last_name', 'email')
             custom_headers = {
                 'first_name': 'Different header'
             }
 
-        def render_something_else(self):
-            # do something smart and return a string
-            return 'looks cool'
+        def render_email(self, instance):
+            return instance.email.replace('@', '< AT >')
 
     #### usage example
     >>> from journalists.models import Journalist
     >>> from journalists.reporters import JournalistReporter
-    >>> x = JournalistReporter(instance=Journalist.objects.all()[0])
-    >>> x.rendered_fields()
-    {'first_name': u'Angelica', 'last_name': u'Edlund', 'something_else', 'looks cool'}
-    >>> x.rendered_headers()
-    {'first_name': u'Different header', 'last_name': u'Last name', 'something_else', 'Something else'}
+    >>> reporter = JournalistReporter()  # by default uses model.objects.all(), can use any queryset
+    >>> reporter.rendered_headers()
+    [u'Different header', u'Last name', u'Email']
+    >>> [row for row in reporter.rendered_rows()]
+    [
+      [u'Angelica', u'Edlund', u'angelicaedlund <AT> engadget.com'],
+      [u'Arnold', u'Ofarrell', u'arnoldofarrell <AT> reddit.com'],
+     # ...
+    ]
+
 
 Plans
 -----
 
 * Provide generic Class-Based Views to simplify the actual report generation
-* Report generation will be done potentially using an iterable object instead,
-  like a Queryset or a list. I believe that makes more sense.
 * Add custom columns that aren't part of a model
 * TESTS!
