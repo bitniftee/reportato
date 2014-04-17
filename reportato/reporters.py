@@ -42,10 +42,16 @@ class ModelReporterMetaclass(type):
                     raise FieldError(message)
                 new_class.fields = opts.fields
 
-            new_class.headers = SortedDict([
-                (field_name, opts.model._meta.get_field_by_name(field_name)[0].verbose_name.capitalize())
-                for field_name in new_class.fields
-            ])
+            headers = []
+            for field_name in new_class.fields:
+                field = opts.model._meta.get_field_by_name(field_name)[0]
+                try:
+                    header_title = field.verbose_name.capitalize()
+                except AttributeError:  # this field doesn't have verbose_name
+                    header_title = field_name.replace('_', ' ').capitalize()
+                headers.append((field_name, header_title))
+
+            new_class.headers = SortedDict(headers)
             if opts.custom_headers is not None:
                 missing_headers = set(opts.custom_headers.keys()) - set(all_model_fields)
                 if missing_headers:
