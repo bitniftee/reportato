@@ -64,7 +64,7 @@ class ModelReporterMetaclass(type):
 
             new_class.headers = SortedDict(headers)
             if opts.custom_headers is not None:
-                missing_headers = set(opts.custom_headers.keys()) - set(all_model_fields)
+                missing_headers = set(opts.custom_headers.keys()) - set(new_class.fields)
                 if missing_headers:
                     message = 'Unknown header(s) (%s) specified for %s'
                     message = message % (', '.join(missing_headers),
@@ -110,12 +110,12 @@ class ModelReporter(object):
         """
         Handler for default fields
         """
-        value = getattr(instance, name)
+        value = getattr(instance, name, None)
 
         if not value:
             return u''
         if isinstance(value, Manager):
-            return u','.join(map(unicode, value.all()))
+            return u', '.join(map(unicode, value.all()))
 
         return unicode(value)
 
