@@ -3,7 +3,7 @@
 
 import csv, codecs, cStringIO
 
-class UnicodeWriter:
+class UnicodeWriter:  # pragma: no cover
     """
     A CSV writer which will write rows to CSV file "f",
     which is encoded in the given encoding.

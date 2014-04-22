@@ -6,6 +6,7 @@ from .utils import UnicodeWriter
 
 class BaseCSVGeneratorView(ListView):
     writer_class = UnicodeWriter
+    file_name = 'myreport.csv'
 
     def get_reporter_class(self):
         return self.reporter_class
@@ -31,7 +32,7 @@ class BaseCSVGeneratorView(ListView):
         writer.writerows(reporter.rendered_rows())
 
     def get_file_name(self):
-        return 'myreport.csv'
+        return self.file_name
 
     def get(self, request, *args, **kwargs):
         response = HttpResponse()

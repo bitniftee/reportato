@@ -2,9 +2,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
+
+from mock import Mock, patch
 
 from .reporters import ModelReporter
+from .utils import UnicodeWriter
+from .views import BaseCSVGeneratorView
 
 
 class ModelReporterMetaclassTestCase(TestCase):
@@ -237,3 +241,109 @@ class ModelReporterTestCase(TestCase):
                 ['Can delete permission', 'Delete permission'],
             ]
         )
+
+
+class BaseCSVGeneratorViewTestCase(TestCase):
+
+    def test_get_reporter_class(self):
+        view = BaseCSVGeneratorView()
+        mock = Mock()
+        view.reporter_class = mock
+
+        self.assertEqual(view.get_reporter_class(), mock)
+
+    def test_get_reporter(self):
+        view = BaseCSVGeneratorView()
+        mock = Mock()
+        mock.return_value = 'foo'  # we make sure we're instantiating the class
+        view.reporter_class = mock
+        view.get_queryset = lambda: [1, 2, 3]
+
+        self.assertEqual(view.get_reporter(), 'foo')
+        mock.assert_called_once_with([1, 2, 3])
+
+    def test_get_writter_class_default(self):
+        view = BaseCSVGeneratorView()
+
+        self.assertEqual(view.get_writer_class(), UnicodeWriter)
+
+    def test_get_writter_class(self):
+        view = BaseCSVGeneratorView()
+        mock = Mock()
+        view.writer_class = mock
+
+        self.assertEqual(view.get_writer_class(), mock)
+
+    def test_should_write_header(self):
+        view = BaseCSVGeneratorView()
+        self.assertTrue(view.should_write_header())
+
+        view.WRITE_HEADER = False
+        self.assertFalse(view.should_write_header())
+
+    def test_get_file_name_default(self):
+        view = BaseCSVGeneratorView()
+
+        self.assertEqual(view.get_file_name(), 'myreport.csv')
+
+    def test_get_file_name_default(self):
+        view = BaseCSVGeneratorView()
+        view.file_name = 'kinginthenorth.csv'
+
+        self.assertEqual(view.get_file_name(), 'kinginthenorth.csv')
+
+    def test_get_should_generate_csv(self):
+        view = BaseCSVGeneratorView()
+        view.write_csv = Mock()
+        request = RequestFactory().get('/')
+
+        with patch('libs.reportato.views.HttpResponse') as http_response_patch:
+            http_response_patch.return_value = {}
+
+            response = view.get(request)
+
+        self.assertEqual(
+            response,
+            {'Content-Disposition': 'attachment; filename="myreport.csv"'}
+        )
+        view.write_csv.assert_called_once()
+
+    def test_write_csv_with_header(self):
+        view = BaseCSVGeneratorView()
+        writer_mock = Mock()
+        reporter_mock = Mock()
+
+        view.get_writer_class = lambda: writer_mock
+        view.get_reporter = lambda: reporter_mock
+
+        view.write_csv(Mock())
+
+        # check we rendered the headers and the rows
+        reporter_mock.rendered_headers.assert_called_once()
+        reporter_mock.rendered_rows.assert_called_once()
+
+        # and that we wrote those things
+        writer_mock.return_value.writerow.assert_called_once_with(
+            reporter_mock.rendered_headers())
+        writer_mock.return_value.writerows.assert_called_once_with(
+            reporter_mock.rendered_rows())
+
+    def test_write_csv_without_header(self):
+        view = BaseCSVGeneratorView()
+        writer_mock = Mock()
+        reporter_mock = Mock()
+
+        view.get_writer_class = lambda: writer_mock
+        view.get_reporter = lambda: reporter_mock
+        view.WRITE_HEADER = False
+
+        view.write_csv(Mock())
+
+        # check we rendered the headers and the rows
+        self.assertFalse(reporter_mock.rendered_headers.called)
+        reporter_mock.rendered_rows.assert_called_once()
+
+        # and that we wrote those things
+        self.assertFalse(writer_mock.return_value.writerow.called)
+        writer_mock.return_value.writerows.assert_called_once_with(
+            reporter_mock.rendered_rows())
