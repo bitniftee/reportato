@@ -286,7 +286,7 @@ class BaseCSVGeneratorViewTestCase(TestCase):
 
         self.assertEqual(view.get_file_name(), 'myreport.csv')
 
-    def test_get_file_name_default(self):
+    def test_get_file_name_non_default(self):
         view = BaseCSVGeneratorView()
         view.file_name = 'kinginthenorth.csv'
 
