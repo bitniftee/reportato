@@ -297,7 +297,7 @@ class BaseCSVGeneratorViewTestCase(TestCase):
         view.write_csv = Mock()
         request = RequestFactory().get('/')
 
-        with patch('libs.reportato.views.HttpResponse') as http_response_patch:
+        with patch('reportato.views.HttpResponse') as http_response_patch:
             http_response_patch.return_value = {}
 
             response = view.get(request)

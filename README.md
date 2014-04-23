@@ -202,6 +202,24 @@ upload it to Google Drive using `google-api-python-client`.
 
             return HttpResponseRedirect(uploaded_file['alternateLink'])
 
+## Running tests
+
+Running reportato tests is dead simple. First, you need a `virtualenv`. I
+highly recommend to use [`virtualenvrapper`](http://virtualenvwrapper.readthedocs.org/en/latest/)
+for it. Having it installed, you'll just need to:
+
+    $ mkvirtualenv reportato  # will create the virtualenv
+    $ workon reportato  # will activate the virtualenv
+    # deactivate  # will deactivate it
+
+In order to run the tests we need `Django` and `Mock`:
+
+    $ pip install Django Mock
+
+Once those dependencies are installed, you can run the tests simply with:
+
+    $ python runtests.py
+
 ## Future plans
 
 * Add custom columns that aren't part of a model for adding aggregates
