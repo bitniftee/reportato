@@ -87,22 +87,22 @@ class ModelReporter(object):
             items = self._meta.model.objects.all()
         self.items = items
 
-    def rendered_headers(self):
+    def get_header_row(self):
         """
         Returns a sorted list with the field's headers
         """
         return self.headers.values()
 
-    def rendered_rows(self):
+    def get_rows(self):
         """
         Returns an iterable with the different rows of the given queryset / list
         """
         for item in self.items:
-            yield self.rendered_fields(item).values()
+            yield self.get_row(item).values()
 
-    def rendered_fields(self, instance):
+    def get_row(self, instance):
         """
-        Returns list with a single row
+        Returns a soreted dictionary with a single row
         """
         return SortedDict([(name, self._render_field(instance, name)) for name in self.fields])
 

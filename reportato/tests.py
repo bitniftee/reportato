@@ -140,7 +140,7 @@ class ModelReporterTestCase(TestCase):
         reporter = PermissionReporterWithAllFields()
 
         self.assertEqual(
-            set(reporter.rendered_headers()),
+            set(reporter.get_header_row()),
             set([u'Codename', u'Content type', 'Group', u'Id', u'Name', 'User'])
         )
 
@@ -148,7 +148,7 @@ class ModelReporterTestCase(TestCase):
         reporter = PermissionReporterWithCustomHeaders()
 
         self.assertEqual(
-            set(reporter.rendered_headers()),
+            set(reporter.get_header_row()),
             set([u'Codename', u'Content type', 'Group', u'Key', u'Foo', 'User'])
         )
 
@@ -160,7 +160,7 @@ class ModelReporterTestCase(TestCase):
         permission = permissions.get(codename='add_permission')
 
         self.assertEqual(
-            reporter.rendered_fields(permission),
+            reporter.get_row(permission),
             {
                 'codename': u'add_permission', 'content_type': u'permission',
                 'group': u'', u'id': u'1',
@@ -175,7 +175,7 @@ class ModelReporterTestCase(TestCase):
         reporter = PermissionReporterWithAllFields(permissions)
 
         self.assertEqual(
-            [row for row in reporter.rendered_rows()],
+            [row for row in reporter.get_rows()],
             [
                 [u'add_permission', u'permission', u'', u'1', u'Can add permission', u''],
                 [u'change_permission', u'permission', u'', u'2', u'Can change permission', u''],
@@ -191,7 +191,7 @@ class ModelReporterTestCase(TestCase):
         permission = permissions.get(codename='add_permission')
 
         self.assertEqual(
-            reporter.rendered_fields(permission),
+            reporter.get_row(permission),
             {'codename': 'add_permission', 'name': 'Can add permission'}
         )
 
@@ -202,7 +202,7 @@ class ModelReporterTestCase(TestCase):
         reporter = PermissionReporterWithSomeFields(permissions)
 
         self.assertEqual(
-            [row for row in reporter.rendered_rows()],
+            [row for row in reporter.get_rows()],
             [
                 ['Can add permission', 'add_permission'],
                 ['Can change permission', 'change_permission'],
@@ -221,7 +221,7 @@ class ModelReporterTestCase(TestCase):
         reporter = GroupReporter()
 
         self.assertEqual(
-            [row for row in reporter.rendered_rows()],
+            [row for row in reporter.get_rows()],
             [
                 [u'foo', u'auth | permission | Can add permission, auth | permission | Can change permission, auth | permission | Can delete permission'],
             ]
@@ -234,7 +234,7 @@ class ModelReporterTestCase(TestCase):
         reporter = PermissionReporterWithSomeFieldsAndCustomRenderer(permissions)
 
         self.assertEqual(
-            [row for row in reporter.rendered_rows()],
+            [row for row in reporter.get_rows()],
             [
                 ['Can add permission', 'Add permission'],
                 ['Can change permission', 'Change permission'],
@@ -319,14 +319,14 @@ class BaseCSVGeneratorViewTestCase(TestCase):
         view.write_csv(Mock())
 
         # check we rendered the headers and the rows
-        reporter_mock.rendered_headers.assert_called_once()
-        reporter_mock.rendered_rows.assert_called_once()
+        reporter_mock.get_header_row.assert_called_once()
+        reporter_mock.get_rows.assert_called_once()
 
         # and that we wrote those things
         writer_mock.return_value.writerow.assert_called_once_with(
-            reporter_mock.rendered_headers())
+            reporter_mock.get_header_row())
         writer_mock.return_value.writerows.assert_called_once_with(
-            reporter_mock.rendered_rows())
+            reporter_mock.get_rows())
 
     def test_write_csv_without_header(self):
         view = BaseCSVGeneratorView()
@@ -340,10 +340,10 @@ class BaseCSVGeneratorViewTestCase(TestCase):
         view.write_csv(Mock())
 
         # check we rendered the headers and the rows
-        self.assertFalse(reporter_mock.rendered_headers.called)
-        reporter_mock.rendered_rows.assert_called_once()
+        self.assertFalse(reporter_mock.get_header_row.called)
+        reporter_mock.get_rows.assert_called_once()
 
         # and that we wrote those things
         self.assertFalse(writer_mock.return_value.writerow.called)
         writer_mock.return_value.writerows.assert_called_once_with(
-            reporter_mock.rendered_rows())
+            reporter_mock.get_rows())

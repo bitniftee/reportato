@@ -32,9 +32,9 @@ will look like:
     >>> from journalists.models import Journalist
     >>> from journalists.reporters import JournalistReporter
     >>> reporter = JournalistReporter()  # by default uses model.objects.all(), can use any queryset
-    >>> reporter.rendered_headers()
+    >>> reporter.get_header_row()
     [u'Different header', u'Last name', u'Email']
-    >>> [row for row in reporter.rendered_rows()]
+    >>> [row for row in reporter.get_rows()]
     [
       [u'Angelica', u'Edlund', u'angelicaedlund <AT> engadget.com'],
       [u'Arnold', u'Ofarrell', u'arnoldofarrell <AT> reddit.com'],
@@ -91,15 +91,15 @@ given model:
 
 Other methods:
 
-#### `rendered_headers()`
+#### `get_header_row()`
 
 Returns an ordered list with the CSV headers
 
-#### `rendered_fields(instance)`
+#### `get_row(instance)`
 
 Returns a sorted dict with the value of each field for the given `instance`
 
-#### `rendered_rows()`
+#### `get_rows()`
 
 Returns an iterable with an ordered list of the values for the given fields.
 

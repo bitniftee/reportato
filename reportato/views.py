@@ -27,9 +27,9 @@ class BaseCSVGeneratorView(ListView):
         reporter = self.get_reporter()
 
         if self.should_write_header():
-            writer.writerow(reporter.rendered_headers())
+            writer.writerow(reporter.get_header_row())
 
-        writer.writerows(reporter.rendered_rows())
+        writer.writerows(reporter.get_rows())
 
     def get_file_name(self):
         return self.file_name
