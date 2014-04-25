@@ -25,7 +25,7 @@ will look like:
                 'first_name': 'Different header'
             }
 
-        def render_email(self, instance):
+        def get_email_column(self, instance):
             return instance.email.replace('@', '< AT >')
 
     #### usage example
@@ -76,10 +76,10 @@ If you want to override that, you can do it using `custom_headers`:
             }
 
 Lastly, if you want to change how to represent a field, you can write your
-`render_FIELDNAME` method to add any logic you want:
+`get_FIELDNAME_column` method to add any logic you want:
 
     # ...
-    def render_field1(self, instance):
+    def get_field1_column(self, instance):
         return instance.field1.replace('_', '-')
 
 To create the report, you need to instantiate the object using a list of objects

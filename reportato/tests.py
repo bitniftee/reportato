@@ -75,7 +75,7 @@ class PermissionReporterWithSomeFieldsAndCustomRenderer(ModelReporter):
         model = Permission
         fields = ('name', 'codename')
 
-    def render_codename(self, instance):
+    def get_codename_column(self, instance):
         return instance.codename.replace('_', ' ').capitalize()
 
 

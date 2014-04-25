@@ -123,7 +123,7 @@ class ModelReporter(object):
         """
         Field handler
         """
-        if hasattr(self, 'render_%s' % name):
-            return getattr(self, 'render_%s' % name)(instance)
+        if hasattr(self, 'get_%s_column' % name):
+            return getattr(self, 'get_%s_column' % name)(instance)
         else:
             return self._default_field_renderer(instance, name)
