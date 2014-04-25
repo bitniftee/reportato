@@ -75,8 +75,19 @@ If you want to override that, you can do it using `custom_headers`:
                 'field1': 'Very cool header'
             }
 
-Lastly, if you want to change how to represent a field, you can write your
-`get_FIELDNAME_column` method to add any logic you want:
+The way reportato resolves each given field is very simple:
+
+    * Checks if the reporter class has some method named `get_FIELDNAME_column(instance)`.
+      If it does, uses it. Otherwise:
+    * Checks if the given FIELDNAME is accessible directly through the instance.
+    * Will raise a `reportato.reporters.UndefinedField` exception if neither
+      of those are defined.
+
+What this means is that you can define whatever you want in your report as a field
+while you have the proper `get_FIELDNAME_column` method. And also will be able
+to use model's fields, decorators or even aggregated fields.
+
+As an example:
 
     # ...
     def get_field1_column(self, instance):

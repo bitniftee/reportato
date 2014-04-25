@@ -1,9 +1,13 @@
 from django.core.exceptions import FieldError
 from django.db.models import Manager
+from django.db.models.fields import FieldDoesNotExist
 from django.utils.datastructures import SortedDict
 
 # This pattern with options and metaclasses is very similar to Django's
 # ModelForms. The idea is to keep a very similar API
+
+class UndefinedField(Exception):
+    pass
 
 class ModelReporterOptions(object):
 
@@ -41,25 +45,20 @@ class ModelReporterMetaclass(type):
         opts = new_class._meta = ModelReporterOptions(
             getattr(new_class, 'Meta', None))
         if opts.model:
-            all_model_fields = opts.model._meta.get_all_field_names()
+            all_model_fields = [field.name for field in opts.model._meta.fields]
             if opts.fields is None:
                 new_class.fields = all_model_fields
             else:
-                missing_fields = set(opts.fields) - set(all_model_fields)
-                if missing_fields:
-                    message = 'Unknown field(s) (%s) specified for %s'
-                    message = message % (', '.join(missing_fields),
-                                         opts.model.__name__)
-                    raise FieldError(message)
                 new_class.fields = opts.fields
 
             headers = []
             for field_name in new_class.fields:
-                field = opts.model._meta.get_field_by_name(field_name)[0]
                 try:
+                    field = opts.model._meta.get_field_by_name(field_name)[0]
                     header_title = field.verbose_name.capitalize()
-                except AttributeError:  # this field doesn't have verbose_name
+                except (AttributeError, FieldDoesNotExist):  # this field doesn't have verbose_name
                     header_title = field_name.replace('_', ' ').capitalize()
+
                 headers.append((field_name, header_title))
 
             new_class.headers = SortedDict(headers)
@@ -110,6 +109,12 @@ class ModelReporter(object):
         """
         Handler for default fields
         """
+        if not hasattr(instance, name):
+            message = 'Can\'t resolve field %(field)s. You may need to ' \
+                'implement the method `get_%(field)s_column(instance)` ' \
+                'on your reporter class.'
+            raise UndefinedField(message % {'field': name})
+
         value = getattr(instance, name, None)
 
         if not value:

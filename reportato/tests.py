@@ -6,24 +6,12 @@ from django.test import TestCase, RequestFactory
 
 from mock import Mock, patch
 
-from .reporters import ModelReporter
+from .reporters import ModelReporter, UndefinedField
 from .utils import UnicodeWriter
 from .views import BaseCSVGeneratorView
 
 
 class ModelReporterMetaclassTestCase(TestCase):
-
-    def test_select_invalid_fields(self):
-        with self.assertRaises(FieldError) as exception:
-            class ThisShouldFail(ModelReporter):
-                class Meta:
-                    model = Permission
-                    fields = ('foo', 'span', 'codename')
-
-        self.assertEqual(
-            exception.exception.message,
-            'Unknown field(s) (foo, span) specified for Permission'
-        )
 
     def test_invalid_headers(self):
         with self.assertRaises(FieldError) as exception:
@@ -68,6 +56,12 @@ class PermissionReporterWithSomeFields(ModelReporter):
     class Meta:
         model = Permission
         fields = ('name', 'codename')
+
+
+class PermissionReporterWithFieldsNotInTheModel(ModelReporter):
+    class Meta:
+        model = Permission
+        fields = ('name', 'codename', 'foo')
 
 
 class PermissionReporterWithSomeFieldsAndCustomRenderer(ModelReporter):
@@ -125,7 +119,7 @@ class ModelReporterTestCase(TestCase):
 
         self.assertEqual(
             set(reporter.fields),
-            set(['codename', 'content_type', 'group', u'id', 'name', 'user'])
+            set(['codename', 'content_type', u'id', 'name'])
         )
 
     def test_reporter_gets_given_model_fields(self):
@@ -136,12 +130,20 @@ class ModelReporterTestCase(TestCase):
             ('name', 'codename')
         )
 
+    def test_reporter_with_fields_not_in_the_model(self):
+        reporter = PermissionReporterWithFieldsNotInTheModel()
+
+        self.assertEqual(
+            reporter.fields,
+            ('name', 'codename', 'foo')
+        )
+
     def test_default_headers(self):
         reporter = PermissionReporterWithAllFields()
 
         self.assertEqual(
             set(reporter.get_header_row()),
-            set([u'Codename', u'Content type', 'Group', u'Id', u'Name', 'User'])
+            set([u'Codename', u'Content type', u'Id', u'Name'])
         )
 
     def test_custom_headers(self):
@@ -149,7 +151,7 @@ class ModelReporterTestCase(TestCase):
 
         self.assertEqual(
             set(reporter.get_header_row()),
-            set([u'Codename', u'Content type', 'Group', u'Key', u'Foo', 'User'])
+            set([u'Codename', u'Content type', u'Key', u'Foo'])
         )
 
     def test_row_generation_with_all_fields(self):
@@ -163,8 +165,7 @@ class ModelReporterTestCase(TestCase):
             reporter.get_row(permission),
             {
                 'codename': u'add_permission', 'content_type': u'permission',
-                'group': u'', u'id': u'1',
-                'name': u'Can add permission', 'user': u'',
+                u'id': u'1', 'name': u'Can add permission',
             }
         )
 
@@ -177,9 +178,9 @@ class ModelReporterTestCase(TestCase):
         self.assertEqual(
             [row for row in reporter.get_rows()],
             [
-                [u'add_permission', u'permission', u'', u'1', u'Can add permission', u''],
-                [u'change_permission', u'permission', u'', u'2', u'Can change permission', u''],
-                [u'delete_permission', u'permission', u'', u'3', u'Can delete permission', u''],
+                [u'1', u'Can add permission', u'permission', u'add_permission'],
+                [u'2', u'Can change permission', u'permission', u'change_permission'],
+                [u'3', u'Can delete permission', u'permission', u'delete_permission'],
             ]
         )
 
@@ -193,6 +194,31 @@ class ModelReporterTestCase(TestCase):
         self.assertEqual(
             reporter.get_row(permission),
             {'codename': 'add_permission', 'name': 'Can add permission'}
+        )
+
+    def test_undefined_field_raises_exception(self):
+        ct = ContentType.objects.get_for_model(Permission)
+        permissions = Permission.objects.filter(content_type=ct)
+
+        reporter = PermissionReporterWithFieldsNotInTheModel(permissions)
+        permission = permissions.get(codename='add_permission')
+
+        self.assertRaises(UndefinedField, reporter.get_row, permission)
+
+    def test_undefined_field_with_custom_method(self):
+        ct = ContentType.objects.get_for_model(Permission)
+        permissions = Permission.objects.filter(content_type=ct)
+
+        reporter = PermissionReporterWithFieldsNotInTheModel(permissions)
+        reporter.get_foo_column = lambda x: 'id-%s' % x.id
+
+        self.assertEqual(
+            [row for row in reporter.get_rows()],
+            [
+                ['Can add permission', 'add_permission', 'id-1'],
+                ['Can change permission', 'change_permission', 'id-2'],
+                ['Can delete permission', 'delete_permission', 'id-3'],
+            ]
         )
 
     def test_generate_all_rows_with_some_fields(self):
