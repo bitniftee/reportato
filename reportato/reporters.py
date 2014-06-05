@@ -85,6 +85,9 @@ class ModelReporter(object):
         if not items:
             items = self._meta.model.objects.all()
         self.items = items
+
+        if not visible_fields:
+            visible_fields = self.fields
         self.visible_fields = visible_fields
 
     def get_header_row(self):
