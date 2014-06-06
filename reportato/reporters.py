@@ -81,6 +81,10 @@ class ModelReporter(object):
         """
         `items` is expected to be an iterable with Django model instances,
         this covers both a Queryset or a list of items
+
+        `visible_fields` is an optional iterable of fields that should be
+        outputted on this instance of ModelReporter. If none, then all
+        fields are included.
         """
         if not items:
             items = self._meta.model.objects.all()
