@@ -3,85 +3,107 @@
 The goal of Reportato is to provide a Django-ish approach to easily get CSV or
 Google Spreadsheet generated reports.
 
-This is still a very alpha version, and this documentation may lie
+This is still a very alpha version, and this documentation may lie.
+
+**Note:** Generating a report can take a long time if the table you're
+generating your report from is large. You might want to avoid forcing your
+users to experience this latency, e.g. by generating the report regularly on a
+cron and allowing them to download the most recent copy, or by fetching the
+report via AJAX so you can show your user pictures of kittens while they wait.
 
 ## Basic configuration
 
-Reportato copies form Django's ModelForms the way to declare how your report
-will look like:
+With Reportato, the way you declare how your report should look is similar to
+Django's ModelForms:
 
-    #### reporters.py
 
-    from reportato.reporters import ModelReporter
+```python
+#### reporters.py
 
-    from .models import Journalist
+from reportato.reporters import ModelReporter
 
-    class JournalistReporter(ModelReporter):
+from .models import Journalist
 
-        class Meta:
-            model = Journalist
-            fields = ('first_name', 'last_name', 'email')
-            custom_headers = {
-                'first_name': 'Different header'
-            }
+class JournalistReporter(ModelReporter):
 
-        def get_email_column(self, instance):
-            return instance.email.replace('@', '< AT >')
+    class Meta:
+        model = Journalist
+        fields = ('first_name', 'last_name', 'email')
+        custom_headers = {
+            'first_name': 'Different header'
+        }
 
-    #### usage example
-    >>> from journalists.models import Journalist
-    >>> from journalists.reporters import JournalistReporter
-    >>> reporter = JournalistReporter()  # by default uses model.objects.all(), can use any queryset
-    >>> reporter.get_header_row()
-    [u'Different header', u'Last name', u'Email']
-    >>> [row for row in reporter.get_rows()]
-    [
-      [u'Angelica', u'Edlund', u'angelicaedlund <AT> engadget.com'],
-      [u'Arnold', u'Ofarrell', u'arnoldofarrell <AT> reddit.com'],
-     # ...
-    ]
+    def get_email_column(self, instance):
+        return instance.email.replace('@', '< AT >')
+
+#### usage example
+>>> from journalists.models import Journalist
+>>> from journalists.reporters import JournalistReporter
+>>> reporter = JournalistReporter()  # by default uses model.objects.all(), can use any queryset
+>>> reporter.get_header_row()
+[u'Different header', u'Last name', u'Email']
+>>> [row for row in reporter.get_rows()]
+[
+  [u'Angelica', u'Edlund', u'angelicaedlund <AT> engadget.com'],
+  [u'Arnold', u'Ofarrell', u'arnoldofarrell <AT> reddit.com'],
+ # ...
+]
+```
+
 
 ## Documentation
 
 ### Model Reporters
 
-For creating a report for a given model, you just need to write a class that
-will inherit from `reportato.reporters.ModelReporter`, and indicate what
-model do you want to report with this. A very simple example:
+To create a report for a given model, you just need to write a class that
+will inherit from `reportato.reporters.ModelReporter`, and indicate which
+model you want to report on. A very simple example:
 
-    from reportato.reporters import ModelReporter
 
-    class MyReport(ModelReporter):
+```python
+from reportato.reporters import ModelReporter
 
-        class Meta:
-            model = MyModel
+class MyReport(ModelReporter):
+
+    class Meta:
+        model = MyModel
+```
+
 
 By default this will generate reports with every field on `MyModel`. You can
-especify what fields to report by using the `fields` variable:
+especify which fields to include by using the `fields` variable:
 
-        # ...
-        class Meta:
-            model = MyModel
-            fields = ('field1', 'field2', 'field3')
+
+```python
+    # ...
+    class Meta:
+        model = MyModel
+        fields = ('field1', 'field2', 'field3')
+```
+
 
 The header row will be generated based on the model field's `verbose_name` value,
 or a simple capitalization of the field name if it doesn't have a `verbose_name`.
 If you want to override that, you can do it using `custom_headers`:
 
-        # ...
-        class Meta:
-            model = MyModel
-            custom_headers {
-                'field1': 'Very cool header'
-            }
+
+```python
+    # ...
+    class Meta:
+        model = MyModel
+        custom_headers {
+            'field1': 'Very cool header'
+        }
+```
+
 
 The way reportato resolves each given field is very simple:
 
-    * Checks if the reporter class has some method named `get_FIELDNAME_column(instance)`.
-      If it does, uses it. Otherwise:
-    * Checks if the given FIELDNAME is accessible directly through the instance.
-    * Will raise a `reportato.reporters.UndefinedField` exception if neither
-      of those are defined.
+* Checks if the reporter class has some method named `get_FIELDNAME_column(instance)`.
+  If it does, uses it. Otherwise:
+* Checks if the given `FIELDNAME` is accessible directly through the instance.
+* Will raise a `reportato.reporters.UndefinedField` exception if neither
+  of those are defined.
 
 What this means is that you can define whatever you want in your report as a field
 while you have the proper `get_FIELDNAME_column` method. And also will be able
@@ -89,16 +111,24 @@ to use model's fields, decorators or even aggregated fields.
 
 As an example:
 
+
+```python
     # ...
     def get_field1_column(self, instance):
         return instance.field1.replace('_', '-')
+```
+
 
 To create the report, you need to instantiate the object using a list of objects
 or a queryset. If you do not pass one, it will take all the objects for the
 given model:
 
-    >>> MyReport()  # report with MyModel.objects.all()
-    >>> MyReport(MyModel.objects.filter(something=something_else))
+
+```python
+>>> MyReport()  # report with MyModel.objects.all()
+>>> MyReport(MyModel.objects.filter(something=something_else))
+```
+
 
 Other methods:
 
@@ -116,7 +146,7 @@ Returns an iterable with an ordered list of the values for the given fields.
 
 ### reportato.views.BaseCSVGeneratorView
 
-Are you a CBV fan? It is your lucky day, because `reportato` provides a base view
+Are you a CBV fan? It's your lucky day, because `reportato` provides a base view
 from which you can inherit for building your own stuff.
 
 `BaseCSVGeneratorView` inherits from Django's `django.views.generic.ListView`
@@ -138,7 +168,7 @@ as implemented on Python documentation.
 
 #### `WRITE_HEADER`
 
-Flag to determine wether we want in our report the headers or not.
+Flag to determine whether to include the headers in the report or not.
 
 ### `file_name`
 
@@ -154,64 +184,68 @@ reporter's method to write into such flow.
 
 ### Report as a Google Sheet
 
-The initial plan was to add some feature to automatically create spreadsheet
-from given reports. However, I changed my mind during the implementation because
-it made certain assumptions about how the tool need to implement OAuth and
+The initial plan was to add some features to automatically create spreadsheets
+from given reports. However, I changed my mind during implementation because
+it made certain assumptions about how the tool needed to implement OAuth and
 felt that it was overkill.
 
-Instead, I'm providing some examples to do it using the tools on this library.
+Instead, I'm providing some examples of how to do it using this library.
 The basic undersanding is that we need to dump the CSV file into a `BytesIO` and
 upload it to Google Drive using `google-api-python-client`.
 
-    import io
 
-    # google apiclient dependencies
-    import httplib2
-    from apiclient.discovery import build
-    from apiclient.http import MediaIoBaseUpload
+```python
+import io
 
-    from reporters.views import BaseCSVGeneratorView
-    from .models import MyModel
-    from .reports import MyReport
+# google apiclient dependencies
+import httplib2
+from apiclient.discovery import build
+from apiclient.http import MediaIoBaseUpload
 
-    class MyReportToSpreadsheet(BaseCSVGeneratorView):
-        model = MyModel
-        reporter_class = MyReport
+from reporters.views import BaseCSVGeneratorView
+from .models import MyModel
+from .reports import MyReport
 
-        def get(self, request, *args, **kwargs):
-            outfile = io.BytesIO()
-            self.write_csv(outfile)
-            # now outfile is filled with the CSV we want.
-            # we need to fetch the user credentials using OAuth, not covering it here
-            credentials = request.user.oauth_credentials
-            http = credentials.authorize(httplib2.Http())
+class MyReportToSpreadsheet(BaseCSVGeneratorView):
+    model = MyModel
+    reporter_class = MyReport
 
-            service = build(
-                serviceName='drive',
-                version='v2',
-                developerKey=settings.GOOGLE_API_KEY,
-                http=http
-            )
+    def get(self, request, *args, **kwargs):
+        outfile = io.BytesIO()
+        self.write_csv(outfile)
+        # now outfile is filled with the CSV we want.
+        # we need to fetch the user credentials using OAuth, not covering it here
+        credentials = request.user.oauth_credentials
+        http = credentials.authorize(httplib2.Http())
 
-            media_body = MediaIoBaseUpload(
-                outfile,
-                mimetype='text/csv',
-                resumable=False
-            )
+        service = build(
+            serviceName='drive',
+            version='v2',
+            developerKey=settings.GOOGLE_API_KEY,
+            http=http
+        )
 
-            body = {
-                "title": title,
-                "description": description,
-                "mimeType": 'text/csv'
-            }
+        media_body = MediaIoBaseUpload(
+            outfile,
+            mimetype='text/csv',
+            resumable=False
+        )
 
-            uploaded_file = service.files().insert(
-                body=body,
-                media_body=media_body,
-                convert=True  # to convert CSV's to Spreadsheet
-            ).execute()
+        body = {
+            "title": title,
+            "description": description,
+            "mimeType": 'text/csv'
+        }
 
-            return HttpResponseRedirect(uploaded_file['alternateLink'])
+        uploaded_file = service.files().insert(
+            body=body,
+            media_body=media_body,
+            convert=True  # to convert CSV's to Spreadsheet
+        ).execute()
+
+        return HttpResponseRedirect(uploaded_file['alternateLink'])
+```
+
 
 ## Running tests
 
