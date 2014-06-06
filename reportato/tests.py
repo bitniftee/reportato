@@ -92,10 +92,13 @@ class ModelReporterTestCase(TestCase):
 
     def _create_users(self, _quantity=5):
         for i in range(1, _quantity + 1):
+            first_name = 'Fred %s' % i
+            last_name = 'Bloggs %s' % i
             username = 'foo%s' % i
             email = '%s@example.com' % i
 
-            get_user_model().objects.create(username=username, email=email)
+            get_user_model().objects.create(username=username,
+                email=email, first_name=first_name, last_name=last_name)
 
     def test_basic_reporter(self):
         reporter = BaseUserReporter()
@@ -267,6 +270,19 @@ class ModelReporterTestCase(TestCase):
                 ['Can delete permission', 'Delete permission'],
             ]
         )
+
+    def test_reporter_with_hidden_fields(self):
+        self._create_users()
+        reporter = BaseUserReporter(visible_fields=('first_name', 'last_name'))
+
+        self.assertEqual(['First name', 'Last name'], reporter.get_header_row())
+        self.assertEqual([row for row in reporter.get_rows()], [
+            ['Fred 1', 'Bloggs 1'],
+            ['Fred 2', 'Bloggs 2'],
+            ['Fred 3', 'Bloggs 3'],
+            ['Fred 4', 'Bloggs 4'],
+            ['Fred 5', 'Bloggs 5']
+        ])
 
 
 class BaseCSVGeneratorViewTestCase(TestCase):
