@@ -77,20 +77,28 @@ class ModelReporterMetaclass(type):
 class ModelReporter(object):
     __metaclass__ = ModelReporterMetaclass
 
-    def __init__(self, items=None):
+    def __init__(self, items=None, visible_fields=None):
         """
         `items` is expected to be an iterable with Django model instances,
         this covers both a Queryset or a list of items
+
+        `visible_fields` is an optional iterable of fields that should be
+        outputted on this instance of ModelReporter. If none, then all
+        fields are included.
         """
         if not items:
             items = self._meta.model.objects.all()
         self.items = items
 
+        if not visible_fields:
+            visible_fields = self.fields
+        self.visible_fields = visible_fields
+
     def get_header_row(self):
         """
         Returns a sorted list with the field's headers
         """
-        return self.headers.values()
+        return [v for k, v in self.headers.iteritems() if k in self.visible_fields]
 
     def get_rows(self):
         """
@@ -103,7 +111,7 @@ class ModelReporter(object):
         """
         Returns a soreted dictionary with a single row
         """
-        return SortedDict([(name, self._render_field(instance, name)) for name in self.fields])
+        return SortedDict([(name, self._render_field(instance, name)) for name in self.fields and self.visible_fields])
 
     def _default_field_renderer(self, instance, name):
         """
