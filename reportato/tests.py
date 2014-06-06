@@ -47,6 +47,16 @@ class BaseUserReporter(ModelReporter):
         model = get_user_model()
 
 
+class UserReporterWithCustomHeaders(ModelReporter):
+    class Meta:
+        model = get_user_model()
+        custom_headers = {
+            'first_name': 'Christian name',
+            'last_name': 'Family name',
+            'email': 'Gmail address'
+        }
+
+
 class PermissionReporterWithAllFields(ModelReporter):
     class Meta:
         model = Permission
@@ -283,6 +293,11 @@ class ModelReporterTestCase(TestCase):
             ['Fred 4', 'Bloggs 4'],
             ['Fred 5', 'Bloggs 5']
         ])
+
+    def test_reporter_with_hidden_fields_and_custom_headers(self):
+        reporter = UserReporterWithCustomHeaders(visible_fields=('first_name', 'last_name'))
+
+        self.assertEqual(['Christian name', 'Family name'], reporter.get_header_row())
 
 
 class BaseCSVGeneratorViewTestCase(TestCase):
