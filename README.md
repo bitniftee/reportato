@@ -100,6 +100,16 @@ given model:
     >>> MyReport()  # report with MyModel.objects.all()
     >>> MyReport(MyModel.objects.filter(something=something_else))
 
+
+Additionally, you can define what fields you want to see on your report during
+creation time using the `visible_fields` parameter:
+
+    >>> MyReport(visible_fields=['first_name', 'last_name'])
+
+This way your reporter will only show those fields, even if you had more on
+your Reporter definition. This allows you to build custom logic if the final
+user wants to customise what columns he/she wants to see each time.
+
 Other methods:
 
 #### `get_header_row()`
