@@ -1,5 +1,7 @@
 # Reportato
 
+[![build-status-image]][travis]
+
 The goal of Reportato is to provide a Django-ish approach to easily get CSV or
 Google Spreadsheet generated reports.
 
@@ -281,3 +283,6 @@ Once those dependencies are installed, you can run the tests simply with:
 * Make some sort of Mixin for making the upload to Google Sheets easier
 * Use `values_list` instead of composing the models for trying to be more efficient
 * Provide helpers for deferring the report generation to GAE task queues
+
+[build-status-image]: https://secure.travis-ci.org/potatolondon/reportato.png?branch=master
+[travis]: http://travis-ci.org/potatolondon/reportato?branch=master
