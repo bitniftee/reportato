@@ -125,7 +125,7 @@ class ModelReporter(object):
 
         value = getattr(instance, name, None)
 
-        if not value:
+        if value is None:
             return u''
         if isinstance(value, Manager):
             return u', '.join(map(unicode, value.all()))
