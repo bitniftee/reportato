@@ -1,3 +1,4 @@
+# coding=utf-8
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -298,6 +299,21 @@ class ModelReporterTestCase(TestCase):
         reporter = UserReporterWithCustomHeaders(visible_fields=('first_name', 'last_name'))
 
         self.assertEqual(['Christian name', 'Family name'], reporter.get_header_row())
+
+    def test_default_field_renderer(self):
+        reporter = BaseUserReporter()
+
+        class MockUser(object):
+            number = 0
+            encoded_string = u'üníçođé þħíñgß'
+
+        user = MockUser()
+
+        self.assertEqual(reporter._default_field_renderer(user, 'number'), u'0')
+        self.assertEqual(
+            reporter._default_field_renderer(user, 'encoded_string'),
+            u'üníçođé þħíñgß'
+        )
 
 
 class BaseCSVGeneratorViewTestCase(TestCase):
