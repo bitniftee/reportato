@@ -13,6 +13,27 @@ users to experience this latency, e.g. by generating the report regularly on a
 cron and allowing them to download the most recent copy, or by fetching the
 report via AJAX so you can show your user pictures of kittens while they wait.
 
+## Installation
+
+Reportato is [hosted on PyPI](https://pypi.python.org/pypi/django-reportato) so
+you can just install it using either:
+
+
+    $ pip install django-reportato
+
+Or:
+
+
+    $ easy_install django-reportato
+
+If you prefer to use the development version of it, you can clone the repository
+and build it manually:
+
+    $ git clone https://github.com/potatolondon/reportato.git
+    $ cd reportato
+    $ python setup.py install
+
+
 ## Basic configuration
 
 With Reportato, the way you declare how your report should look is similar to
