@@ -35,7 +35,7 @@ class BaseCSVGeneratorView(ListView):
         return self.file_name
 
     def get(self, request, *args, **kwargs):
-        response = HttpResponse()
+        response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="%s"' % self.get_file_name()
         self.write_csv(response)
 
